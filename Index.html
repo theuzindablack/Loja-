@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LOJA CLIENTE</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+        body{background:#f5f5f5;color:#212121;padding:12px;max-width:1200px;margin:0 auto;}
+        .topo{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;border-bottom:2px solid #ff9800;padding-bottom:10px;}
+        h1{color:#ff6d00;font-size:24px;}
+        .status{padding:8px 12px;border-radius:20px;color:#fff;font-weight:bold;font-size:13px;}
+        .aberto{background:#2e7d32;}
+        .fechado{background:#c62828;}
+        .conectando{background:#ff9800;color:#000;}
+        .btn{padding:10px 15px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;width:auto;}
+        @media(max-width:480px){.btn{padding:8px 10px;font-size:13px;flex:1;}}
+        .azul{background:#1565c0;color:#fff;width:100%;margin-top:8px;}
+        .grid-produtos{display:grid;grid-template-columns:1fr;gap:15px;}
+        @media(min-width:550px){.grid-produtos{grid-template-columns:repeat(2,1fr);}}
+        @media(min-width:900px){.grid-produtos{grid-template-columns:repeat(3,1fr);}}
+        .card-produto{background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid #ddd;}
+        .card-produto img{width:100%;height:160px;object-fit:cover;border-radius:6px;margin-bottom:8px;}
+        .card-produto h3{font-size:17px;margin-bottom:5px;}
+        .preco{color:#e65100;font-weight:bold;margin-bottom:8px;font-size:19px;}
+        .indisponivel{opacity:0.6;}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:15px;overflow-y:auto;}
+        .conteudo-modal{background:#fff;padding:25px;border-radius:10px;max-width:480px;width:100%;margin:10px auto;}
+        .cabecalho-modal{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+        .fechar{background:none;border:none;font-size:28px;cursor:pointer;color:#666;padding:0;}
+        .chat-mensagens{height:250px;overflow-y:auto;border:1px solid #ddd;border-radius:6px;padding:10px;margin-bottom:10px;background:#fafafa;}
+        .msg{max-width:80%;padding:8px 12px;border-radius:12px;margin:5px 0;font-size:14px;}
+        .cliente{background:#e3f2fd;margin-left:auto;border-bottom-right-radius:2px;}
+        .host{background:#f1f8e9;margin-right:auto;border-bottom-left-radius:2px;}
+        input{width:100%;padding:10px;margin:5px 0;border:1px solid #ddd;border-radius:6px;}
+    </style>
+</head>
+<body>
+
+<div class="topo">
+    <h1>🛒 LOJA PRIVADA</h1>
+    <span id="statusLoja" class="status conectando">CONECTANDO...</span>
+</div>
+
+<div class="grid-produtos" id="vitrine"></div>
+
+<div id="modalChat" class="modal">
+    <div class="conteudo-modal">
+        <div class="cabecalho-modal">
+            <h3 id="tituloChat">Falar com o Vendedor</h3>
+            <button class="fechar" onclick="fecharModal()">×</button>
+        </div>
+        <div class="chat-mensagens" id="areaChat"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="entradaChat" placeholder="Escreva sua mensagem..." onkeydown="if(event.key==='Enter')enviarMsg()">
+            <button class="btn azul" onclick="enviarMsg()">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const ID_HOST = "loja_host_completo_2026";
+let conexao = null;
+let historico = [];
+let lojaDados = {lojaAberta:false, produtos:[]};
+
+iniciarConexao();
+
+function iniciarConexao() {
+    const peer = new Peer({host:"peerjs-server.onrender.com", port:443, path:"/", secure:true, debug:0});
+    
+    peer.on('open', () => {
+        conexao = peer.connect(ID_HOST);
+        conexao.on('open', () => console.log("✅ CONECTADO AO HOST!"));
+        conexao.on('data', dados => {
+            if(dados.tipo === "sync") {
+                lojaDados = dados.dados;
+                atualizarTelaLoja();
+            }
+            if(dados.acao === "resposta_host") {
+                historico.push({quem:'host', texto:dados.texto, hora:dados.hora});
+                atualizarChat();
+            }
+        });
+        conexao.on('close', () => setTimeout(iniciarConexao, 3000));
+    });
+}
+
+function atualizarTelaLoja() {
+    const status = document.getElementById('statusLoja');
+    status.innerText = lojaDados.lojaAberta ? 'LOJA ABERTA' : 'LOJA FECHADA';
+    status.className = `status ${lojaDados.lojaAberta ? 'aberto' : 'fechado'}`;
+
+    document.getElementById('vitrine').innerHTML = lojaDados.produtos.map(p => `
+        <div class="card-produto ${!p.disponivel ? 'indisponivel' : ''}">
+            ${p.foto ? `<img src="${p.foto}" alt="${p.nome}">` : `<div style="width:100%;height:160px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:35px;">📦</div>`}
+            <h3>${p.nome}</h3>
+            <p class="preco">R$ ${p.preco}</p>
+            <p style="color:#555;font-size:13px;margin-bottom:10px;">${p.descricao || 'Sem descrição'}</p>
+            <button class="btn azul" onclick="abrirChat()">💬 Falar com o Vendedor</button>
+        </div>
+    `).join('');
+}
+
+function abrirChat() {
+    historico = [];
+    document.getElementById('areaChat').innerHTML = '';
+    document.getElementById('modalChat').style.display = 'flex';
+}
+function fecharModal() { document.getElementById('modalChat').style.display = 'none'; }
+function atualizarChat() {
+    const area = document.getElementById('areaChat');
+    area.innerHTML = historico.map(m => `<div class="msg ${m.quem}"><small style="opacity:0.7;">${m.hora}</small><br>${m.texto}</div>`).join('');
+    area.scrollTop = area.scrollHeight;
+}
+function enviarMsg() {
+    const texto = document.getElementById('entradaChat').value.trim();
+    if(!texto || !conexao || !conexao.open) return alert("❌ Sem conexão!");
+    const hora = new Date().toLocaleTimeString('pt-BR');
+    historico.push({quem:'cliente', texto, hora});
+    atualizarChat();
+    conexao.send({acao: "enviar_mensagem", texto, hora});
+    document.getElementById('entradaChat').value = '';
+}
+</script>
+</body>
+</html>
