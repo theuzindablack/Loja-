@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PAINEL HOST - COMPLETO</title>
+    <title>PAINEL HOST - CONTAGEM CORRIGIDA</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
@@ -15,8 +15,9 @@
         .bloco{background:#1e1e1e;border-radius:10px;padding:15px;border:1px solid #333;}
         .destaque{background:#252525;border-radius:8px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
         .codigo{font-family:monospace;font-weight:bold;color:#4fc3f7;font-size:14px;}
-        .online{color:#4caf50;font-weight:bold;}
-        input,textarea,select{width:100%;padding:10px;margin:5px 0;background:#252525;border:1px solid #444;color:#fff;border-radius:6px;font-size:14px;}
+        .online{color:#4caf50;font-weight:bold;animation:pulse 1.5s infinite;}
+        @keyframes pulse{0%{opacity:1;}50%{opacity:0.7;}100%{opacity:1;}}
+        input,textarea{width:100%;padding:10px;margin:5px 0;background:#252525;border:1px solid #444;color:#fff;border-radius:6px;font-size:14px;}
         button{padding:10px 14px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;margin:4px 2px;font-size:14px;transition:0.1s;}
         button:hover{opacity:0.9;}
         button:active{transform:scale(0.98);}
@@ -44,29 +45,28 @@
 </head>
 <body>
 
-<h1>🔹 PAINEL HOST - GERENCIAMENTO COMPLETO</h1>
+<h1>🔹 PAINEL HOST - CONTAGEM CORRIGIDA</h1>
 <div id="status" class="status desconectado">🔌 INICIANDO CONEXÃO...</div>
 
 <div class="destaque">
-    <div><strong>📌 SEU CÓDIGO DE CONEXÃO:</strong> <span class="codigo" id="meuCodigo">Carregando...</span></div>
+    <div><strong>📌 SEU CÓDIGO:</strong> <span class="codigo" id="meuCodigo">Carregando...</span></div>
     <div><strong>👥 CLIENTES ONLINE:</strong> <span class="online" id="qtdOnline">0</span></div>
 </div>
 
 <div class="grid">
     <div class="bloco">
-        <h2>➕ CADASTRAR NOVO PRODUTO</h2>
-        <input type="text" id="nomeProd" placeholder="Nome do produto" required>
-        <input type="text" id="precoProd" placeholder="Preço (ex: 50,00)" required>
-        <textarea id="descProd" placeholder="Descrição detalhada" rows="2"></textarea>
+        <h2>➕ CADASTRAR PRODUTO</h2>
+        <input type="text" id="nomeProd" placeholder="Nome do produto">
+        <input type="text" id="precoProd" placeholder="Preço (ex: 50,00)">
+        <textarea id="descProd" placeholder="Descrição" rows="2"></textarea>
         <input type="file" id="fotoProd" accept="image/*">
-        <button class="laranja" onclick="adicionarProduto()">💾 SALVAR PRODUTO</button>
+        <button class="laranja" onclick="adicionarProduto()">💾 SALVAR</button>
     </div>
-
     <div class="bloco">
         <h2>⚙️ CONTROLE DA LOJA</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="verde" onclick="mudarLoja(true)">✅ ABRIR LOJA</button>
-            <button class="vermelho" onclick="mudarLoja(false)">❌ FECHAR LOJA</button>
+            <button class="verde" onclick="mudarLoja(true)">✅ ABRIR</button>
+            <button class="vermelho" onclick="mudarLoja(false)">❌ FECHAR</button>
         </div>
         <div class="log" id="log"></div>
     </div>
@@ -74,7 +74,7 @@
 
 <div class="abas">
     <div class="aba ativa" onclick="mostrarAba('produtos')">📦 PRODUTOS</div>
-    <div class="aba" onclick="mostrarAba('abertos')">💬 CONVERSAS ABERTAS</div>
+    <div class="aba" onclick="mostrarAba('abertos')">💬 ABERTAS</div>
     <div class="aba" onclick="mostrarAba('arquivados')">📂 ARQUIVADOS</div>
 </div>
 
@@ -88,18 +88,18 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <h3 id="tituloChat">Conversa</h3>
             <div style="display:flex;gap:6px;">
-                <button class="cinza" onclick="fecharModal()">✕ Sair</button>
+                <button class="cinza" onclick="fecharModal()">✕</button>
                 <button class="vermelho" onclick="arquivarTicket()">📂 ARQUIVAR</button>
             </div>
         </div>
         <div class="area-msg" id="areaChat"></div>
         <input type="text" id="entradaMsg" placeholder="Sua mensagem..." onkeydown="if(event.key==='Enter')enviarResposta()">
-        <button class="verde" onclick="enviarResposta()">Enviar Resposta</button>
+        <button class="verde" onclick="enviarResposta()">Enviar</button>
     </div>
 </div>
 
 <script>
-const ID_HOST = "loja_host_completo_2026";
+const ID_HOST = "loja_host_contagem_certa_2026";
 const peer = new Peer(ID_HOST, {host:"peerjs-server.onrender.com", port:443, path:"/", secure:true, debug:0});
 
 let conexoes = [];
@@ -107,12 +107,7 @@ let conversas = {abertos:{}, arquivados:{}};
 let chatAtual = null;
 let abaAtual = 'produtos';
 
-// BANCO DE DADOS SALVO NO NAVEGADOR
-let db = JSON.parse(localStorage.getItem('loja_dados_completos')) || {
-    lojaAberta: false,
-    produtos: []
-};
-
+let db = JSON.parse(localStorage.getItem('loja_dados_completos')) || {lojaAberta:false, produtos:[]};
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 
@@ -122,20 +117,29 @@ function addLog(texto) {
     logEl.scrollTop = logEl.scrollHeight;
 }
 
-// ==================== CONEXÃO ====================
+// ✅ CONTAGEM CORRIGIDA: SÓ CONTA CONEXÕES REALMENTE ABERTAS
+function atualizarQtdOnline() {
+    // Remove conexões fechadas/inválidas primeiro
+    conexoes = conexoes.filter(conn => conn.open === true);
+    // Mostra só a quantidade real
+    document.getElementById('qtdOnline').innerText = conexoes.length;
+}
+
 peer.on('open', meuId => {
-    statusEl.innerText = "✅ CONECTADO E PRONTO!";
+    statusEl.innerText = "✅ CONECTADO!";
     statusEl.className = "status conectado";
     document.getElementById('meuCodigo').innerText = meuId;
-    addLog(`Código do Host: ${meuId}`);
+    addLog(`Código Host: ${meuId}`);
     sincronizarTodos();
     atualizarTela();
+    // Atualiza contagem a cada 2 segundos para garantir precisão
+    setInterval(atualizarQtdOnline, 2000);
 });
 
 peer.on('connection', conn => {
     conexoes.push(conn);
     const idCliente = conn.peer;
-    addLog(`NOVO CLIENTE CONECTADO: ${idCliente.slice(0,12)}...`);
+    addLog(`✅ CLIENTE CONECTOU: ${idCliente.slice(0,12)}...`);
     atualizarQtdOnline();
     
     conn.on('open', () => conn.send({tipo:"sync", dados:db}));
@@ -143,25 +147,25 @@ peer.on('connection', conn => {
     conn.on('data', dados => {
         if(dados.acao === "enviar_mensagem") {
             const idConv = `conv_${idCliente}`;
-            if(!conversas.abertos[idConv]) {
-                conversas.abertos[idConv] = {cliente: idCliente, mensagens: []};
-            }
+            if(!conversas.abertos[idConv]) conversas.abertos[idConv] = {cliente: idCliente, mensagens: []};
             if(conversas.arquivados[idConv]) {
                 conversas.abertos[idConv] = conversas.arquivados[idConv];
                 delete conversas.arquivados[idConv];
             }
-            conversas.abertos[idConv].mensagens.push({
-                quem: 'cliente', texto: dados.texto, hora: new Date().toLocaleTimeString('pt-BR')
-            });
-            addLog(`MENSAGEM DE ${idCliente.slice(0,12)}...: ${dados.texto}`);
+            conversas.abertos[idConv].mensagens.push({quem:'cliente', texto:dados.texto, hora: new Date().toLocaleTimeString('pt-BR')});
+            addLog(`📩 Msg de ${idCliente.slice(0,12)}...: ${dados.texto}`);
             atualizarTela();
             if(chatAtual === idConv) atualizarChat();
         }
     });
 
     conn.on('close', () => {
-        conexoes = conexoes.filter(c => c !== conn);
-        addLog(`CLIENTE DESCONECTOU: ${idCliente.slice(0,12)}...`);
+        addLog(`❌ CLIENTE DESCONECTOU: ${idCliente.slice(0,12)}...`);
+        atualizarQtdOnline();
+    });
+
+    conn.on('error', () => {
+        addLog(`⚠️ CONEXÃO PERDIDA: ${idCliente.slice(0,12)}...`);
         atualizarQtdOnline();
     });
 });
@@ -172,14 +176,9 @@ peer.on('error', erro => {
     setTimeout(() => window.location.reload(), 3000);
 });
 
-// ==================== FUNÇÕES AUXILIARES ====================
 function sincronizarTodos() {
     localStorage.setItem('loja_dados_completos', JSON.stringify(db));
     conexoes.forEach(c => { if(c.open) c.send({tipo:"sync", dados:db}); });
-}
-
-function atualizarQtdOnline() {
-    document.getElementById('qtdOnline').innerText = conexoes.length;
 }
 
 function mudarLoja(status) {
@@ -189,23 +188,13 @@ function mudarLoja(status) {
     atualizarTela();
 }
 
-// ==================== GERENCIAR PRODUTOS ====================
 function adicionarProduto() {
     const nome = document.getElementById('nomeProd').value.trim();
     const preco = document.getElementById('precoProd').value.trim();
     if(!nome || !preco) return alert('Preencha nome e preço!');
-    
-    const novo = {
-        id: Date.now(),
-        nome: nome,
-        preco: preco,
-        descricao: document.getElementById('descProd').value.trim(),
-        disponivel: true,
-        foto: ""
-    };
-
-    const arquivo = document.getElementById('fotoProd').files[0];
-    if(arquivo) {
+    const novo = {id:Date.now(), nome, preco, descricao:document.getElementById('descProd').value, disponivel:true, foto:""};
+    const arq = document.getElementById('fotoProd').files[0];
+    if(arq) {
         const leitor = new FileReader();
         leitor.onloadend = () => {
             novo.foto = leitor.result;
@@ -214,40 +203,33 @@ function adicionarProduto() {
             sincronizarTodos();
             atualizarTela();
         };
-        leitor.readAsDataURL(arquivo);
+        leitor.readAsDataURL(arq);
     } else {
         db.produtos.unshift(novo);
         addLog(`PRODUTO ADICIONADO: ${nome}`);
         sincronizarTodos();
         atualizarTela();
     }
-
     document.getElementById('nomeProd').value = '';
     document.getElementById('precoProd').value = '';
     document.getElementById('descProd').value = '';
 }
 
 function excluirProduto(id) {
-    if(confirm('Tem certeza que quer excluir esse produto?')) {
+    if(confirm('Excluir produto?')) {
         const prod = db.produtos.find(p => p.id === id);
         db.produtos = db.produtos.filter(p => p.id !== id);
-        addLog(`PRODUTO EXCLUÍDO: ${prod?.nome || 'Desconhecido'}`);
+        addLog(`PRODUTO EXCLUÍDO: ${prod?.nome}`);
         sincronizarTodos();
         atualizarTela();
     }
 }
 
-// ==================== ABA E CONVERSAS ====================
 function mostrarAba(aba) {
     abaAtual = aba;
     document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
     event.target.classList.add('ativa');
-    
-    const titulos = {
-        'produtos': 'LISTA DE PRODUTOS',
-        'abertos': 'CONVERSAS ABERTAS',
-        'arquivados': 'CONVERSAS ARQUIVADAS'
-    };
+    const titulos = {produtos:'LISTA DE PRODUTOS', abertos:'CONVERSAS ABERTAS', arquivados:'CONVERSAS ARQUIVADAS'};
     document.getElementById('tituloAba').innerText = titulos[aba];
     atualizarTela();
 }
@@ -257,7 +239,7 @@ function arquivarTicket() {
     conversas.arquivados[chatAtual] = conversas.abertos[chatAtual];
     delete conversas.abertos[chatAtual];
     addLog(`TICKET ARQUIVADO: ${chatAtual}`);
-    alert("✅ Ticket arquivado! Cliente já pode abrir outro na hora!");
+    alert("✅ Arquivado! Cliente já pode abrir outro!");
     fecharModal();
     atualizarTela();
 }
@@ -273,9 +255,7 @@ function fecharModal() { document.getElementById('modalChat').style.display = 'n
 function atualizarChat() {
     const area = document.getElementById('areaChat');
     const conv = conversas.abertos[chatAtual] || conversas.arquivados[chatAtual];
-    area.innerHTML = conv.mensagens.map(m => 
-        `<div class="msg ${m.quem}"><small style="opacity:0.7;">${m.hora}</small><br>${m.texto}</div>`
-    ).join('');
+    area.innerHTML = conv.mensagens.map(m => `<div class="msg ${m.quem}"><small style="opacity:0.7;">${m.hora}</small><br>${m.texto}</div>`).join('');
     area.scrollTop = area.scrollHeight;
 }
 function enviarResposta() {
@@ -290,24 +270,18 @@ function enviarResposta() {
     document.getElementById('entradaMsg').value = '';
 }
 
-// ==================== ATUALIZAR TELA GERAL ====================
 function atualizarTela() {
     const conteudo = document.getElementById('listaConteudo');
-    
     if(abaAtual === 'produtos') {
         conteudo.innerHTML = db.produtos.length === 0 
             ? `<p style="color:#999;text-align:center;">Nenhum produto cadastrado</p>` 
             : db.produtos.map(p => `
                 <div class="item">
-                    <div>
-                        <strong>${p.nome}</strong><br>
-                        <span style="color:#ff9800;">R$ ${p.preco}</span>
-                    </div>
+                    <div><strong>${p.nome}</strong><br><span style="color:#ff9800;">R$ ${p.preco}</span></div>
                     <button class="vermelho" onclick="excluirProduto(${p.id})">🗑️ Excluir</button>
                 </div>
             `).join('');
-    } 
-    else {
+    } else {
         const dados = abaAtual === 'abertos' ? conversas.abertos : conversas.arquivados;
         const itens = Object.entries(dados);
         conteudo.innerHTML = itens.length === 0 
@@ -324,4 +298,3 @@ atualizarTela();
 </script>
 </body>
 </html>
-  
